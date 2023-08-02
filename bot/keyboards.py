@@ -10,6 +10,7 @@ def from_menu_kb_generation():
     kb_builder.row(*buttons, width=1)
     return kb_builder.as_markup(resize_keyboard=True)
 
+
 def return_to_menu():
     button_name = 'Перейти в меню'
     button_data = 'go_to_menu'

@@ -1,52 +1,31 @@
-import asyncio
+import requests
+from lxml import html
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
-from aiogram import Bot, Dispatcher
-from aiogram.filters import CommandStart
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, CallbackQuery
+# proc = ['20.219.182.59', '200.111.104.59', '74.82.50.155', '201.182.251.140', '103.111.118.68', '203.150.113.98', '203.150.113.172', '154.236.191.44', '203.150.128.102', '49.49.60.46', '146.196.108.94', '116.12.44.19', '103.87.169.205', '186.121.235.66', '177.129.252.222', '95.56.254.139', '129.151.88.6', '181.191.94.126', '91.204.239.189', '202.8.74.14', '103.242.99.182', '158.101.228.50', '202.40.177.69', '64.225.8.191', '36.93.106.247', '205.233.79.250', '95.217.68.48', '45.224.22.177', '83.151.4.172', '151.22.181.211', '110.77.246.69', '45.70.200.97', '204.157.241.12', '199.243.245.94', '154.236.179.227']
+#
+# for i in range(len(proc)):
+#     try:
+#         proxies = {'https:': proc[i]}
+#         url = 'https://www.yandex.ru/pogoda/moscow'
+#         resp = requests.get(url=url,proxies=proxies)
+#         if resp.url[:33]=='https://www.yandex.ru/showcaptcha':
+#             print(i)
+#             continue
+#         with open('proxy_test.html','w',encoding='utf-8') as file:
+#             file.write(resp.text)
+#         break
+#     except Exception as r:
+#         print(r)
 
-from aiogram_dialog import Window, DialogManager, StartMode, setup_dialogs, Dialog
-from aiogram_dialog.widgets.kbd import Button
-from aiogram_dialog.widgets.text import Const
-
-storage = MemoryStorage()
-bot = Bot(token='6451274123:AAFST_eFn89wEMz5H6Gd6HyTeIayYpjtMFs')
-dp = Dispatcher(bot=bot, storage=storage)
-
-
-class MySG(StatesGroup):
-    main = State()
-
-async def go_clicked(c: CallbackQuery, button: Button, manager: DialogManager):
-    await c.message.edit_text("Going on!")
-
-
-main_window = Window(
-    Const("Hello, unknown person"),
-    Button(
-        Const("Go"),
-        id="go",  # id is used to detect which button is clicked
-        on_click=go_clicked,
-    )
-    ,
-    state=MySG.main,
-)
-
-
-
-@dp.message(CommandStart())
-async def start(m: Message, dialog_manager: DialogManager):
-    await dialog_manager.start(MySG.main, mode=StartMode.RESET_STACK)
-
-
-async def main():
-    dialog = Dialog(main_window)
-    dp.include_router(dialog)
-
-    setup_dialogs(dp)
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
-
-if __name__ == '__main__':
-    asyncio.run(main())
+url_for_proxy = 'http://free-proxy.cz/ru/proxylist/country/all/https/ping/all/2'
+options = Options()
+options.page_load_strategy = 'eager'
+# op = webdriver.ChromeOptions()
+# op.add_argument('headless')
+driver = webdriver.Chrome()#options=op)
+driver.get(url_for_proxy)
+tree = html.fromstring(driver.page_source)
+res = tree.xpath('//td[@class="left" and  @style="text-align:center"]/text()')
+print(res)

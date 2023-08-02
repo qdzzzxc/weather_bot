@@ -1,4 +1,4 @@
-from aiogram import F, Dispatcher, Router
+'''from aiogram import F, Dispatcher, Router
 from aiogram.enums import ContentType
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.state import StatesGroup, State, default_state
@@ -97,7 +97,7 @@ async def any_message_response(message: Message, dialog_manager: DialogManager):
     print(StateFilter(default_state))
     # keyboard = return_to_menu()
     # await message.answer(text=text_for_response['no_filters'], reply_markup=keyboard)
-    await dialog_manager.start(BotStates.dont_know_where, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(BotStates.dont_know_where, mode=StartMode.RESET_STACK)'''
 
 
 
