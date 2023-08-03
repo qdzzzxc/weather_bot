@@ -6,6 +6,7 @@ from aiogram.fsm.state import StatesGroup, State, default_state
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
 
+from db.data_access_object import DataAccessObject
 
 from keyboards import from_menu_kb_generation, return_to_menu
 from texts import text_for_response
@@ -46,7 +47,6 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext):
 @router.message(StateFilter(BotStates.wait_for_city_name), MagicFilter.len(F.text)<30)
 async def searching_process(message: Message, state: FSMContext):
     await state.update_data(city=message.text)
-    print(await state.get_data())
     await message.answer(text=f'Поиск погоды в {message.text}')
     await state.clear()
 
