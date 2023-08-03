@@ -4,6 +4,7 @@ import os
 from aiogram import Bot, Dispatcher
 from sqlalchemy import URL
 
+from middlewares import ThrottlingMiddleware
 import user_handlers_fsm
 from config import load_config
 from main_menu import set_main_menu
@@ -18,6 +19,9 @@ async def main():
     await set_main_menu(bot)
 
     dp.include_router(user_handlers_fsm.router)
+
+    dp.message.outer_middleware(ThrottlingMiddleware())
+
     #dp.include_router(other_handlers.router)
 
     # postgres_url = URL.create(
