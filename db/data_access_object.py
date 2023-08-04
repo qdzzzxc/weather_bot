@@ -2,7 +2,7 @@ import logging
 from typing import NoReturn, Any, Union
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.engine import ScalarResult
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.exc import (
@@ -35,3 +35,8 @@ class DataAccessObject:
         db_object: Union[Users],
     ) -> None:
         await self.session.merge(db_object)
+
+    async def add_last_city(self,db_object: Union[Users], db_object_id: int, city_name: str) -> None:
+        if db_object_id:
+            stmt = update(db_object).where(db_object.user_id == db_object_id).values(last_city = city_name)
+        await self.session.execute(stmt)
