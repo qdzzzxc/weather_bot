@@ -1,32 +1,30 @@
 import asyncio
-import time
-from aiohttp import ClientSession
+import sys
+
+from arsenic import get_session, keys, browsers, services
+
+if sys.platform.startswith('win'):
+    GECKODRIVER = './geckodriver.exe'
+else:
+    GECKODRIVER = './geckodriver'
 
 
-async def get_weather(city):
-    async with ClientSession() as session:
-        url = f'http://api.openweathermap.org/data/2.5/weather'
-        params = {'q': city, 'APPID': '2a4ff86f9aaa70041ec8e82db64abf56', 'units':'metric'}
-
-        async with session.get(url=url, params=params) as response:
-            weather_json = await response.json()
-            print(f'{city}: {weather_json}')
-
-
-async def main(cities_):
-    tasks = []
-    for city in cities_:
-        tasks.append(asyncio.create_task(get_weather(city)))
-
-    for task in tasks:
-        await task
+async def hello_world(name):
+    service = services.Geckodriver(binary=GECKODRIVER)
+    browser = browsers.Firefox()
+    async with get_session(service, browser) as session:
+        await session.get('https://www.yandex.ru/pogoda/')
+        search_box = await session.wait_for_element(5, 'input[class="mini-suggest-form__input mini-suggest__input"]')
+        await search_box.send_keys(name)
+        await search_box.send_keys(keys.ENTER)
+        await asyncio.sleep(5)
+        res = await session.get_page_source()
 
 
-cities = ['Moscow', 'St. Petersburg', 'Rostov-on-Don', 'Kaliningrad', 'Vladivostok',
-          'Minsk', 'Beijing', 'Delhi', 'Istanbul', 'Tokyo', 'London', 'New York']
+def main(name):
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(hello_world(name))
 
-print(time.strftime('%X'))
 
-asyncio.run(main(cities))
-
-print(time.strftime('%X'))
+if __name__ == '__main__':
+    main('Голицыно')
