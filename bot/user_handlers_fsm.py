@@ -23,9 +23,8 @@ class BotStates(StatesGroup):
 
 
 @router.message(Command('menu'))
-async def menu_command_response(message : Message, dao):
-    is_last = bool(await dao.get_last_city(Users, message.from_user.id))
-    keyboard = from_menu_kb_generation(is_last=is_last)
+async def menu_command_response(message : Message, dao, last_val=None):
+    keyboard = from_menu_kb_generation(is_last=bool(last_val))
     await message.answer(text=text_for_response['menu'], reply_markup=keyboard)
 
 
@@ -44,6 +43,11 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext):
     text = 'Введите название населённого пункта:'
     await callback.message.edit_text(text=text)
     await state.set_state(BotStates.wait_for_city_name)
+
+
+@router.callback_query(F.data =='weather_last_city_search')
+async def enter_city_name(callback: CallbackQuery, state: FSMContext, last_val):
+    await callback.message.edit_text(text=f'Поиск погоды в {last_val}')
 
 
 @router.message(StateFilter(BotStates.wait_for_city_name), MagicFilter.len(F.text)<30)
@@ -75,9 +79,10 @@ async def callback_to_menu(callback: CallbackQuery):
 
 
 @router.message()
-async def any_message_response(message: Message):
+async def any_message_response(message: Message, state: FSMContext):
     keyboard = return_to_menu()
     await message.answer(text=text_for_response['no_filters'], reply_markup=keyboard)
+    await state.clear()
 
 
 

@@ -33,4 +33,6 @@ class RegisteredMiddleware(BaseMiddleware):
                 )
             )
 
+        data["last_val"] = await dao.get_last_city(Users, tg_user.id)
+
         return await handler(event, data)
