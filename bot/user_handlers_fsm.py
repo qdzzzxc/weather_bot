@@ -23,8 +23,9 @@ class BotStates(StatesGroup):
 
 
 @router.message(Command('menu'))
-async def menu_command_response(message : Message):
-    keyboard = from_menu_kb_generation()
+async def menu_command_response(message : Message, dao):
+    is_last = bool(await dao.get_last_city(Users, message.from_user.id))
+    keyboard = from_menu_kb_generation(is_last=is_last)
     await message.answer(text=text_for_response['menu'], reply_markup=keyboard)
 
 
