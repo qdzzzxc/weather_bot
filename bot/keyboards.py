@@ -2,10 +2,10 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-def from_menu_kb_generation(is_last):
+def from_menu_kb_generation(last_val):
     kb_builder = InlineKeyboardBuilder()
     button_names = ['Поиск по населённому пункту']
-    if is_last: button_names.append('Повторить последний поиск')
+    if last_val: button_names.append('Повторить последний поиск')
     back_data = ['weather_city_search','weather_last_city_search']
     buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
     kb_builder.row(*buttons, width=1)

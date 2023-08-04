@@ -1,34 +1,24 @@
-from lxml import html
-import requests
-from transliterate import translit
-import mechanicalsoup
-
-def get_city_name(name):
-    return translit(name, language_code='ru', reversed=True).lower()
-
-def get_city_cords_2(name):
-    cords_url = 'https://time-in.ru/coordinates/'
-    resp = requests.get(cords_url, headers = {'search':name})
-    print(resp.url)
-    tree_for_cords = html.fromstring(resp.content)
-    cords = tree_for_cords.xpath(f'//div[@class="coordinates-city-info"]/div/text()')[0].split()
-    lat = cords[2][:-2]
-    lon = cords[3]
-    return lat, lon
-
-city_cords_memo = {}
-def get_city_cords(name):
-    if name in city_cords_memo:
-        return city_cords_memo[name]
-    browser = mechanicalsoup.StatefulBrowser()
-    browser.open("https://yandex.ru/maps")
-    print(browser.url)
-    browser.select_form('form.search-form-view')
-    print(browser.form.print_summary())
-    browser["value"] = name
-    browser.submit_selected()
-
-    print(browser.get_current_page())
+import asyncio
+import time
+from aiohttp import ClientSession
 
 
-get_city_cords('Одинцово')
+async def get_openweather(city):
+    async with ClientSession() as session:
+        url = f'http://api.openweathermap.org/data/2.5/weather'
+        params = {'q': city, 'APPID': '2a4ff86f9aaa70041ec8e82db64abf56', 'units':'metric'}
+
+        async with session.get(url=url, params=params) as response:
+            weather = await response.json()
+            if weather.get('message'):
+                return
+            return weather['coord']['lat'], weather['coord']['lon'], weather['weather'][0]['main'], \
+                weather['main']['temp'], weather['main']['feels_like']
+
+
+
+async def get_stat(city):
+    open_weather = await asyncio.create_task(get_openweather(city))
+    return open_weather
+
+#asyncio.run(get_stat('голицыно'))

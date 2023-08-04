@@ -9,7 +9,7 @@ from sqlalchemy.exc import (
     NoResultFound,
 )
 
-from db.models import Users
+from db.models import Users, Cities
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class DataAccessObject:
 
     #  Get object from id
     async def get_object(
-        self, db_object: Union[Users], db_object_id: int = None
+        self, db_object: Users|Cities, db_object_id: int = None
     ) -> list:
         stmt = select(db_object)
         if db_object_id:
@@ -47,3 +47,9 @@ class DataAccessObject:
             res = await self.session.execute(stmt)
             res = res.one()[0]
             return res
+
+    async def add_city(
+        self,
+        db_object: Cities,
+    ) -> None:
+        await self.session.merge(db_object)

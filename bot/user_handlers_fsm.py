@@ -6,12 +6,12 @@ from aiogram.fsm.state import StatesGroup, State, default_state
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
 
+from bot.weather_parsing import get_stat
 from db.data_access_object import DataAccessObject
 from db.models import Users
 
 from keyboards import from_menu_kb_generation, return_to_menu
 from texts import text_for_response
-from trying_selenium import get_stat
 
 storage = MemoryStorage()
 router = Router()
@@ -19,12 +19,16 @@ router = Router()
 
 class BotStates(StatesGroup):
     wait_for_city_name = State()
-    result = State()
+
+
+@router.message(Command('start'))
+async def help_command_response(message : Message):
+    await message.answer(text=text_for_response['start'])
 
 
 @router.message(Command('menu'))
 async def menu_command_response(message : Message, dao, last_val=None):
-    keyboard = from_menu_kb_generation(is_last=bool(last_val))
+    keyboard = from_menu_kb_generation(last_val=bool(last_val))
     await message.answer(text=text_for_response['menu'], reply_markup=keyboard)
 
 
@@ -45,17 +49,30 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext):
     await state.set_state(BotStates.wait_for_city_name)
 
 
+result_weather = "{}\n" \
+                 "{} °C\n" \
+                 "Ощущается как {} °C\n"
+
+
 @router.callback_query(F.data =='weather_last_city_search')
 async def enter_city_name(callback: CallbackQuery, state: FSMContext, last_val):
     await callback.message.edit_text(text=f'Поиск погоды в {last_val}')
 
+    weather = await get_stat(last_val)
+
+    await callback.message.edit_text(text=result_weather.format(last_val,weather[3],weather[4]))
 
 @router.message(StateFilter(BotStates.wait_for_city_name), MagicFilter.len(F.text)<30)
 async def searching_process(message: Message, state: FSMContext, dao):
-    await state.update_data(city=message.text)
-    await dao.add_last_city(Users, message.from_user.id, message.text)
-    await message.answer(text=f'Поиск погоды в {message.text}')
+    resp = await message.answer(text=f'Поиск погоды в {message.text}')
     await state.clear()
+
+    weather = await get_stat(message.text)
+    if weather:
+        await dao.add_last_city(Users, message.from_user.id, message.text)
+        await resp.edit_text(text=result_weather.format(message.text, weather[3], weather[4]))
+    else:
+        await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 
 
 @router.message(StateFilter(BotStates.wait_for_city_name))
@@ -65,8 +82,8 @@ async def city_name_error(message: Message, state: FSMContext):
 
 
 @router.callback_query(F.data =='go_to_menu')
-async def callback_to_menu(callback: CallbackQuery):
-    keyboard = from_menu_kb_generation()
+async def callback_to_menu(callback: CallbackQuery, last_val):
+    keyboard = from_menu_kb_generation(last_val=bool(last_val))
     await callback.message.edit_text(
         text=text_for_response['menu'],
         reply_markup=keyboard)
