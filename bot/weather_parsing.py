@@ -58,13 +58,15 @@ async def get_mail_weather(name):
             return temp_now, feels_like, type_, rain_perc, for_10_days
 
 
-async def get_stat(city):
+async def get_stat(city, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
     name, lat, lon = open_weather[0], open_weather[1], open_weather[2]
-    print(await asyncio.create_task(get_yandex_weather(lat,lon)))
-    #print(await asyncio.create_task(get_mail_weather(name)))
-    return open_weather
+    # yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
+    # mail_weather = await asyncio.create_task(get_mail_weather(name))
+
+    if mode == 'default':
+        return open_weather[3], open_weather[4], open_weather[5]
 
 #asyncio.run(get_stat('голицыно'))

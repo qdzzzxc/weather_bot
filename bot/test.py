@@ -31,21 +31,20 @@
 # print(res)
 
 
-from bs4 import BeautifulSoup as bs
+from datetime import datetime, timedelta
 
-with open('yandex.txt', 'r', encoding='utf-8') as file:
-    res = file.read()
-    print(res)
-soup = bs(res, 'html.parser')
-two_in_one = soup.select("span.temp__value.temp__value_with-unit")
-temp_now = int(two_in_one[1].get_text())
-print(temp_now)
-feels_like = int(two_in_one[2].get_text())
-print(feels_like)
-type_ = soup.select("div.link__condition.day-anchor")[0].get_text()
-print(type_)
-# rain_perc = soup.find_all('div', class_='information__content__period__additional__item')[4].text
-# rain_perc = int(rain_perc.strip()[:-1])
-for_10_days = soup.select('span.temp__value.temp__value_with-unit')[7:26:2]
-for_10_days = [int(x.get_text()) for x in for_10_days]
-print(for_10_days)
+d = (datetime.today() + timedelta(days=1)).strftime('%d-%m')
+td = datetime.today()
+result_weather_10_days = "{} " \
+                         "Сегодня: {}\n" \
+                         "Завтра: {}\n" \
+                         f"{(td+timedelta(days=2)).strftime('%d-%m')} {{}}°C\n" \
+                         f"{(td+timedelta(days=3)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=4)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=5)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=6)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=7)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=8)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=9)).strftime('%d-%m')} {{}}°C\n"\
+                         f"{(td+timedelta(days=10)).strftime('%d-%m')} {{}}°C\n"
+print(result_weather_10_days)
