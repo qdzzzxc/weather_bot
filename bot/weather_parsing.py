@@ -37,7 +37,7 @@ async def get_yandex_weather(lat,lon):
             for_10_days = soup.select('span.temp__value.temp__value_with-unit')[7:26:2]
             for_10_days = [int(x.get_text()) for x in for_10_days]
 
-            return temp_now, feels_like, type_, None, for_10_days
+            return temp_now, feels_like, type_, for_10_days
 
 
 async def get_mail_weather(name):
@@ -58,15 +58,24 @@ async def get_mail_weather(name):
             return temp_now, feels_like, type_, rain_perc, for_10_days
 
 
-async def get_stat(city, mode='default'):
+async def get_stat(city, dao, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
-    name, lat, lon = open_weather[0], open_weather[1], open_weather[2]
-    # yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
-    # mail_weather = await asyncio.create_task(get_mail_weather(name))
+    name, lat, lon = open_weather[:3]
+    yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
+    mail_weather = await asyncio.create_task(get_mail_weather(name))
+    now_o, feels_o = open_weather[-2:]
+    now_y, feels_y, type_y, d_10_y = yandex_weather
+    now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
+    now_r = round((now_o + now_y + now_m) / 3, 1)
+    feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
+    d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
+
+    if mode == '10_d':
+        return now_r, *d_10_r
 
     if mode == 'default':
-        return open_weather[3], open_weather[4], open_weather[5]
+        return type_y, now_r, feels_r, rain_m
 
 #asyncio.run(get_stat('голицыно'))

@@ -6,7 +6,7 @@ def from_menu_kb_generation(last_val):
     kb_builder = InlineKeyboardBuilder()
     button_names = ['Поиск по населённому пункту']
     if last_val: button_names.append('Повторить последний поиск')
-    back_data = ['weather_city_search','weather_last_city_search']
+    back_data = ['weather_city_search', 'weather_last_city_search']
     buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
     kb_builder.row(*buttons, width=1)
     return kb_builder.as_markup(resize_keyboard=True)
@@ -22,8 +22,17 @@ def return_to_menu():
 
 def kb_result():
     kb_builder = InlineKeyboardBuilder()
-    button_names = ['Показать прогноз погоды на 10 дней', 'Подробная сводка','Поиск по населённому пункту']
-    back_data = ['show_10_days', 'show_all_stat','weather_city_search']
+    button_names = ['Показать прогноз погоды на 10 дней', 'Поиск по населённому пункту']
+    back_data = ['show_10_days', 'weather_city_search']
+    buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
+    kb_builder.row(*buttons, width=1)
+    return kb_builder.as_markup(resize_keyboard=True)
+
+
+def kb_result_10_d():
+    kb_builder = InlineKeyboardBuilder()
+    button_names = ['Поиск по населённому пункту']
+    back_data = ['weather_city_search']
     buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
     kb_builder.row(*buttons, width=1)
     return kb_builder.as_markup(resize_keyboard=True)
