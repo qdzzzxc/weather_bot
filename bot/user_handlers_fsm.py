@@ -60,7 +60,7 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext, last_val):
 
     weather = await get_stat(last_val)
 
-    await callback.message.edit_text(text=result_weather.format(last_val,weather[3],weather[4]))
+    await callback.message.edit_text(text=result_weather.format(last_val,weather[4],weather[5]))
 
 @router.message(StateFilter(BotStates.wait_for_city_name), MagicFilter.len(F.text)<30)
 async def searching_process(message: Message, state: FSMContext, dao):
@@ -70,7 +70,7 @@ async def searching_process(message: Message, state: FSMContext, dao):
     weather = await get_stat(message.text)
     if weather:
         await dao.add_last_city(Users, message.from_user.id, message.text)
-        await resp.edit_text(text=result_weather.format(message.text, weather[3], weather[4]))
+        await resp.edit_text(text=result_weather.format(message.text, weather[4], weather[5]))
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 
