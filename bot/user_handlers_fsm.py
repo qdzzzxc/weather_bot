@@ -10,7 +10,7 @@ from bot.weather_parsing import get_stat
 from db.data_access_object import DataAccessObject
 from db.models import Users
 
-from keyboards import from_menu_kb_generation, return_to_menu
+from keyboards import from_menu_kb_generation, return_to_menu, kb_result
 from texts import text_for_response
 
 storage = MemoryStorage()
@@ -60,7 +60,8 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext, last_val):
 
     weather = await get_stat(last_val)
 
-    await callback.message.edit_text(text=result_weather.format(last_val,weather[4],weather[5]))
+    await callback.message.edit_text(text=result_weather.format(last_val,weather[4],weather[5]), reply_markup=kb_result())
+
 
 @router.message(StateFilter(BotStates.wait_for_city_name), MagicFilter.len(F.text)<30)
 async def searching_process(message: Message, state: FSMContext, dao):
@@ -70,7 +71,7 @@ async def searching_process(message: Message, state: FSMContext, dao):
     weather = await get_stat(message.text)
     if weather:
         await dao.add_last_city(Users, message.from_user.id, message.text)
-        await resp.edit_text(text=result_weather.format(message.text, weather[4], weather[5]))
+        await resp.edit_text(text=result_weather.format(message.text, weather[4], weather[5]), reply_markup=kb_result())
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 

@@ -18,3 +18,13 @@ def return_to_menu():
     button: InlineKeyboardButton = InlineKeyboardButton(text=button_name, callback_data=button_data)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
     return keyboard
+
+
+def kb_result():
+    kb_builder = InlineKeyboardBuilder()
+    button_names = ['Показать прогноз погоды на 10 дней', 'Подробная сводка','Поиск по населённому пункту']
+    back_data = ['show_10_days', 'show_all_stat','weather_city_search']
+    buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
+    kb_builder.row(*buttons, width=1)
+    return kb_builder.as_markup(resize_keyboard=True)
+
