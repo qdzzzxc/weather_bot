@@ -11,7 +11,7 @@ from bot.weather_parsing import get_stat
 from db.data_access_object import DataAccessObject
 from db.models import Users
 
-from keyboards import from_menu_kb_generation, return_to_menu, kb_result, kb_result_10_d, kb_result_all_stat
+from keyboards import from_menu_kb_generation, return_to_menu, kb_result, kb_result_10_d
 from texts import text_for_response
 
 storage = MemoryStorage()
@@ -94,7 +94,7 @@ async def searching_process(message: Message, state: FSMContext, dao):
 
     weather = await get_stat(message.text, dao)
     if weather:
-        await dao.add_last_city(Users, message.from_user.id, message.text)
+        await dao.upd_col_val(Users, 'user_id', message.from_user.id, 'last_city', message.text)
         await resp.edit_text(text=result_weather_default.format(message.text, *weather), reply_markup=kb_result())
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')

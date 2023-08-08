@@ -52,7 +52,16 @@ class WeatherStat(Base):
     feels = mapped_column(Integer, unique=False, nullable=True)
     type_ = mapped_column(VARCHAR(32), unique=False, nullable=True)
     rain = mapped_column(Integer, unique=False, nullable=True)
-    ten_days = mapped_column(VARCHAR(256), unique=False, nullable=True)
+    day_1 = mapped_column(Integer, unique=False, nullable=True)
+    day_2 = mapped_column(Integer, unique=False, nullable=True)
+    day_3 = mapped_column(Integer, unique=False, nullable=True)
+    day_4 = mapped_column(Integer, unique=False, nullable=True)
+    day_5 = mapped_column(Integer, unique=False, nullable=True)
+    day_6 = mapped_column(Integer, unique=False, nullable=True)
+    day_7 = mapped_column(Integer, unique=False, nullable=True)
+    day_8 = mapped_column(Integer, unique=False, nullable=True)
+    day_9 = mapped_column(Integer, unique=False, nullable=True)
+    day_10 = mapped_column(Integer, unique=False, nullable=True)
 
     @property
     def to_dict(self) -> dict:

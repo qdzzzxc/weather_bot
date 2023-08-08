@@ -1,6 +1,7 @@
 import asyncio
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup as bs
+from datetime import datetime
 
 
 async def get_open_weather(city):
@@ -63,19 +64,34 @@ async def get_stat(city, dao, mode='default'):
     if not open_weather:
         return
     name, lat, lon = open_weather[:3]
-    yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
-    mail_weather = await asyncio.create_task(get_mail_weather(name))
+    # yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
+    # mail_weather = await asyncio.create_task(get_mail_weather(name))
     now_o, feels_o = open_weather[-2:]
-    now_y, feels_y, type_y, d_10_y = yandex_weather
-    now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
-    now_r = round((now_o + now_y + now_m) / 3, 1)
-    feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
-    d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
+    # now_y, feels_y, type_y, d_10_y = yandex_weather
+    # now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
+    # now_r = round((now_o + now_y + now_m) / 3, 1)
+    # feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
+    # d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
 
-    if mode == '10_d':
-        return now_r, *d_10_r
+    # if mode == '10_d':
+    #     return now_r, *d_10_r
+
+    from db.models import Cities, WeatherStat
+
+    hours = await dao.get_col_val(Cities, 'city', city, 'updated')
+    if not hours:
+        await dao.add_object(Cities(
+                    city=city,
+                    updated=int(datetime.now().strftime('%H')),
+                    lat=lat,
+                    lon=lon
+                ))
+
+    if hours and abs(hours - int(datetime.now().strftime('%H'))) > 2:
+        pass
 
     if mode == 'default':
+        return 'нормик', now_o, feels_o, 123
         return type_y, now_r, feels_r, rain_m
 
 #asyncio.run(get_stat('голицыно'))

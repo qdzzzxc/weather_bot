@@ -1,5 +1,5 @@
 import logging
-from typing import NoReturn, Any, Union
+from typing import NoReturn
 from dataclasses import dataclass
 
 from sqlalchemy import select, update, exists
@@ -9,7 +9,7 @@ from sqlalchemy.exc import (
     NoResultFound,
 )
 
-from db.models import Users, Cities
+from db.models import Users, Cities, WeatherStat
 
 logger = logging.getLogger(__name__)
 
@@ -20,36 +20,31 @@ class DataAccessObject:
 
     #  Get object from id
     async def get_object(
-        self, db_object: Users|Cities, db_object_id: int = None
+        self, db_object: Users | Cities | WeatherStat, col_val_name, db_object_id: int = None
     ) -> list:
         stmt = select(db_object)
         if db_object_id:
-            stmt = stmt.where(db_object.user_id == db_object_id)
+            stmt = stmt.where(getattr(db_object, col_val_name) == db_object_id)
 
-        result: ScalarResult = await self.session.execute(stmt)
+        result = await self.session.execute(stmt)
         return [item.to_dict for item in result.scalars().all()]
 
     #  Merge object
     async def add_object(
         self,
-        db_object: Union[Users],
+        db_object: Users | Cities | WeatherStat,
     ) -> None:
         await self.session.merge(db_object)
 
-    async def add_last_city(self, db_object: Union[Users], db_object_id: int, city_name: str) -> None:
+    async def upd_col_val(self, db_object: Users | Cities | WeatherStat, db_object_id_col, db_object_id: int, col_val_name, value) -> None:
         if db_object_id:
-            stmt = update(db_object).where(db_object.user_id == db_object_id).values(last_city = city_name)
-        await self.session.execute(stmt)
+            #под дикт переделать можн
+            stmt = update(db_object).where(getattr(db_object, db_object_id_col) == db_object_id).values({col_val_name: value})
+            await self.session.execute(stmt)
 
-    async def get_last_city(self, db_object: Union[Users], db_object_id: int) -> str:
+    async def get_col_val(self, db_object: Users | Cities | WeatherStat, db_object_id_col, db_object_id: int, col_val_name) -> str:
         if db_object_id:
-            stmt = select(db_object.last_city).where(db_object.user_id == db_object_id)
+            stmt = select(getattr(db_object, col_val_name)).where(getattr(db_object, db_object_id_col) == db_object_id)
             res = await self.session.execute(stmt)
-            res = res.one()[0]
-            return res
+            return res.scalar()
 
-    async def add_city(
-        self,
-        db_object: Cities,
-    ) -> None:
-        await self.session.merge(db_object)

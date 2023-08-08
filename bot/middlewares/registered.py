@@ -25,7 +25,7 @@ class RegisteredMiddleware(BaseMiddleware):
         tg_user: user.User = data.get("event_from_user")
         dao: DataAccessObject = data["dao"]
 
-        if not await dao.get_object(Users, tg_user.id):
+        if not await dao.get_object(Users, 'user_id', tg_user.id):
             await dao.add_object(
                 Users(
                     user_id=tg_user.id,
@@ -33,6 +33,6 @@ class RegisteredMiddleware(BaseMiddleware):
                 )
             )
 
-        data["last_val"] = await dao.get_last_city(Users, tg_user.id)
+        data["last_val"] = await dao.get_col_val(Users, 'user_id', tg_user.id, 'last_city')
 
         return await handler(event, data)
