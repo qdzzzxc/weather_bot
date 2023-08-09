@@ -3,6 +3,8 @@ from aiohttp import ClientSession
 from bs4 import BeautifulSoup as bs
 from datetime import datetime, timedelta
 
+from transliterate import translit
+
 from db.models import Cities, WeatherStat
 
 
@@ -78,9 +80,10 @@ async def get_stat(city, dao, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
+    translit_name = translit(city, language_code='ru', reversed=True)
     name, lat, lon = open_weather[:3]
     yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
-    mail_weather = await asyncio.create_task(get_mail_weather(name))
+    mail_weather = await asyncio.create_task(get_mail_weather(translit_name))
     now_o, feels_o = open_weather[-2:]
     now_y, feels_y, type_y, d_10_y = yandex_weather
     now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
@@ -112,7 +115,6 @@ async def get_stat(city, dao, mode='default'):
             day_8=d_10_r[7],
             day_9=d_10_r[8],
             day_10=d_10_r[9]
-
         ))
 
     if mode == 'default':
@@ -120,5 +122,3 @@ async def get_stat(city, dao, mode='default'):
 
     if mode == '10_d':
         return now_r, *d_10_r
-
-#asyncio.run(get_stat('голицыно'))
