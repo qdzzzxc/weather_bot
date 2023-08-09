@@ -32,6 +32,8 @@ async def get_yandex_weather(lat,lon):
         params = {'lat':lat,'lon':lon}
 
         async with session.get(url=url, params=params) as response:
+            print(response.url)
+            print(str(response.url).startswith('https://yandex.ru/showcaptcha'))
             soup = bs(await response.text(), 'html.parser')
             two_in_one = soup.select("span.temp__value.temp__value_with-unit")
             temp_now = int(two_in_one[1].get_text())
@@ -64,7 +66,7 @@ async def get_mail_weather(name):
 async def get_stat(city, dao, mode='default'):
     hours = await dao.get_col_val(Cities, 'city', city, 'updated')
 
-    if hours and datetime.now() - hours < timedelta(hours=2):
+    if hours and datetime.now() - hours < timedelta(hours=1):
         city, now, feels, type_, rain, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10 = await dao.get_repeat_weather_stat(
             city)
         if mode == 'default':

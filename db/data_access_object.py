@@ -52,6 +52,7 @@ class DataAccessObject:
         stmt = select(Cities.city, WeatherStat.now, WeatherStat.feels, WeatherStat.type_, WeatherStat.rain,
                       WeatherStat.day_1, WeatherStat.day_2, WeatherStat.day_3, WeatherStat.day_4, WeatherStat.day_5,
                       WeatherStat.day_6, WeatherStat.day_7, WeatherStat.day_8, WeatherStat.day_9,
-                      WeatherStat.day_10).join(WeatherStat, Cities.city == WeatherStat.city_name)
+                      WeatherStat.day_10).join(WeatherStat, Cities.city == WeatherStat.city_name).where(
+            Cities.city == city_name)
         res = await self.session.execute(stmt)
         return res.one().tuple()
