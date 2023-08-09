@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import Integer, VARCHAR, Float, Time, ForeignKey
+from sqlalchemy import Integer, VARCHAR, Float, Time, ForeignKey, DateTime
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 
 from .base import Base
@@ -28,10 +28,10 @@ class Cities(Base):
     __tablename__ = 'cities'
 
     city = mapped_column(VARCHAR(32), unique=True, nullable=False, primary_key=True)
-    updated = mapped_column(Integer, unique=False, nullable=True )
     lat = mapped_column(Float, unique=False, nullable=True)
     lon = mapped_column(Float, unique=False, nullable=True)
     weather: Mapped[List["WeatherStat"]] = relationship()
+    updated = mapped_column(DateTime, unique=False, nullable=True)
 
     def __str__(self):
         return f'<User:{self.city},{self.updated},{self.lat},{self.lon},{self.yandex_weather}>'

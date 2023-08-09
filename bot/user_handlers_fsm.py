@@ -58,7 +58,7 @@ result_weather_default = "{}\n" \
 
 td = datetime.today()
 result_weather_10_days = "{} " \
-                         "Сегодня: {}°C\n" \
+                         "Сейчас: {}°C\n" \
                          "Завтра: {}°C\n" \
                          f"{(td+timedelta(days=2)).strftime('%d-%m')}  {{}}°C\n" \
                          f"{(td+timedelta(days=3)).strftime('%d-%m')}  {{}}°C\n"\

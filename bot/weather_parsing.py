@@ -1,7 +1,9 @@
 import asyncio
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup as bs
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from db.models import Cities, WeatherStat
 
 
 async def get_open_weather(city):
@@ -60,38 +62,61 @@ async def get_mail_weather(name):
 
 
 async def get_stat(city, dao, mode='default'):
+    hours = await dao.get_col_val(Cities, 'city', city, 'updated')
+
+    if hours and datetime.now() - hours < timedelta(hours=2):
+        city, now, feels, type_, rain, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10 = await dao.get_repeat_weather_stat(
+            city)
+        if mode == 'default':
+            return type_, now, feels, rain
+
+        if mode == '10_d':
+            return now, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10
+
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
     name, lat, lon = open_weather[:3]
-    # yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
-    # mail_weather = await asyncio.create_task(get_mail_weather(name))
+    yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
+    mail_weather = await asyncio.create_task(get_mail_weather(name))
     now_o, feels_o = open_weather[-2:]
-    # now_y, feels_y, type_y, d_10_y = yandex_weather
-    # now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
-    # now_r = round((now_o + now_y + now_m) / 3, 1)
-    # feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
-    # d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
+    now_y, feels_y, type_y, d_10_y = yandex_weather
+    now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
+    now_r = round((now_o + now_y + now_m) / 3, 1)
+    feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
+    d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
 
-    # if mode == '10_d':
-    #     return now_r, *d_10_r
-
-    from db.models import Cities, WeatherStat
-
-    hours = await dao.get_col_val(Cities, 'city', city, 'updated')
     if not hours:
         await dao.add_object(Cities(
-                    city=city,
-                    updated=int(datetime.now().strftime('%H')),
-                    lat=lat,
-                    lon=lon
-                ))
+            city=city,
+            lat=lat,
+            lon=lon,
+            updated=datetime.now()
+        ))
 
-    if hours and abs(hours - int(datetime.now().strftime('%H'))) > 2:
-        pass
+        await dao.add_object(WeatherStat(
+            city_name=city,
+            now=now_r,
+            feels=feels_r,
+            type_=type_y,
+            rain=rain_m,
+            day_1=d_10_r[0],
+            day_2=d_10_r[1],
+            day_3=d_10_r[2],
+            day_4=d_10_r[3],
+            day_5=d_10_r[4],
+            day_6=d_10_r[5],
+            day_7=d_10_r[6],
+            day_8=d_10_r[7],
+            day_9=d_10_r[8],
+            day_10=d_10_r[9]
+
+        ))
 
     if mode == 'default':
-        return 'нормик', now_o, feels_o, 123
         return type_y, now_r, feels_r, rain_m
+
+    if mode == '10_d':
+        return now_r, *d_10_r
 
 #asyncio.run(get_stat('голицыно'))
