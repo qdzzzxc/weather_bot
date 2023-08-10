@@ -13,8 +13,11 @@ def update_proxies():
     driver = webdriver.Chrome()
     driver.get(url_for_proxy)
     tree = html.fromstring(driver.page_source)
-    res = tree.xpath('//td[@class="left" and  @style="text-align:center"]/text()')
-    final_res = res
+    ip = tree.xpath('//td[@class="left" and  @style="text-align:center"]/text()')
+    port = tree.xpath('//span[@class="fport"]/text()')
+    final_res = [f'HTTPS://{x}:{y}' for x, y in zip(ip, port)]
     with open('proxies.txt','w') as file:
         for line in final_res:
             file.write(f"{line}\n")
+
+update_proxies()

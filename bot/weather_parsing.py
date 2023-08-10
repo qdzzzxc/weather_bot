@@ -34,8 +34,9 @@ async def get_yandex_weather(lat,lon):
         params = {'lat':lat,'lon':lon}
 
         async with session.get(url=url, params=params) as response:
-            print(response.url)
-            print(str(response.url).startswith('https://yandex.ru/showcaptcha'))
+            if str(response.url).startswith('https://yandex.ru/showcaptcha'):
+                print('яндекс хочет капчу')
+                return None, None, None, None
             soup = bs(await response.text(), 'html.parser')
             two_in_one = soup.select("span.temp__value.temp__value_with-unit")
             temp_now = int(two_in_one[1].get_text())
@@ -65,6 +66,11 @@ async def get_mail_weather(name):
             return temp_now, feels_like, type_, rain_perc, for_10_days
 
 
+def get_avg_with_nones(*args):
+    arg = [x for x in args if x is not None]
+    return round(sum(arg)/len(arg), 1)
+
+
 async def get_stat(city, dao, mode='default'):
     hours = await dao.get_col_val(Cities, 'city', city, 'updated')
 
@@ -80,16 +86,19 @@ async def get_stat(city, dao, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
-    translit_name = translit(city, language_code='ru', reversed=True)
+    translit_name = translit(city, language_code='ru', reversed=True).replace("'",'')
     name, lat, lon = open_weather[:3]
     yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
     mail_weather = await asyncio.create_task(get_mail_weather(translit_name))
     now_o, feels_o = open_weather[-2:]
     now_y, feels_y, type_y, d_10_y = yandex_weather
     now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
-    now_r = round((now_o + now_y + now_m) / 3, 1)
-    feels_r = round((feels_o + feels_y + feels_m) / 3, 1)
-    d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
+    now_r = get_avg_with_nones(now_o, now_y, now_m)
+    feels_r = get_avg_with_nones(feels_o, feels_y, feels_m)
+    if d_10_y:
+        d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
+    else:
+        d_10_r = d_10_m
 
     if not hours:
         await dao.add_object(Cities(
