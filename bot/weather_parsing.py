@@ -2,7 +2,7 @@ import asyncio
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup as bs
 from datetime import datetime, timedelta
-
+import logging
 from transliterate import translit
 
 from db.models import Cities, WeatherStat
@@ -28,14 +28,14 @@ async def get_open_weather(city):
             return name, lat, lon, type_, temp_now, feels_like
 
 
-async def get_yandex_weather(lat,lon):
+async def get_yandex_weather(lat, lon):
     async with ClientSession() as session:
         url = 'https://yandex.ru/pogoda/'
-        params = {'lat':lat,'lon':lon}
+        params = {'lat': lat, 'lon': lon}
 
         async with session.get(url=url, params=params) as response:
             if str(response.url).startswith('https://yandex.ru/showcaptcha'):
-                print('яндекс хочет капчу')
+                logging.warning('Yandex потребовал ввести капчу')
                 return None, None, None, None
             soup = bs(await response.text(), 'html.parser')
             two_in_one = soup.select("span.temp__value.temp__value_with-unit")
@@ -86,7 +86,7 @@ async def get_stat(city, dao, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
-    translit_name = translit(city, language_code='ru', reversed=True).replace("'",'')
+    translit_name = translit(city, language_code='ru', reversed=True).replace("'", '')
     name, lat, lon = open_weather[:3]
     yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
     mail_weather = await asyncio.create_task(get_mail_weather(translit_name))
@@ -101,6 +101,7 @@ async def get_stat(city, dao, mode='default'):
         d_10_r = d_10_m
 
     if not hours:
+        logging.info(f'Добавлен город {city}')
         await dao.add_object(Cities(
             city=city,
             lat=lat,
@@ -125,9 +126,22 @@ async def get_stat(city, dao, mode='default'):
             day_9=d_10_r[8],
             day_10=d_10_r[9]
         ))
+    else:
+        await dao.upd_col_val(Cities, 'city', city, vals_to_update={'updated': datetime.now()})
+        await dao.upd_col_val(WeatherStat, 'city_name', city, vals_to_update={'now': now_r,
+                                                                              'feels': feels_r,
+                                                                              'type_': (type_y or type_m),
+                                                                              'rain': rain_m,
+                                                                              'day_1': d_10_r[0], 'day_2': d_10_r[1],
+                                                                              'day_3': d_10_r[2], 'day_4': d_10_r[3],
+                                                                              'day_5': d_10_r[4],
+                                                                              'day_6': d_10_r[5], 'day_7': d_10_r[6],
+                                                                              'day_8': d_10_r[7], 'day_9': d_10_r[8],
+                                                                              'day_10': d_10_r[9]})
+        logging.info(f'Обновлён город {city}')
 
     if mode == 'default':
-        return type_y, now_r, feels_r, rain_m
+        return (type_y or type_m), now_r, feels_r, rain_m
 
     if mode == '10_d':
         return now_r, *d_10_r

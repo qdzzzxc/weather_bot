@@ -1,4 +1,5 @@
 from typing import Any, Awaitable, Callable, Dict
+import logging
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message
@@ -15,6 +16,7 @@ class ThrottlingMiddleware(BaseMiddleware):
             data: Dict[str, Any],
     ) -> Any:
         if event.chat.id in self.caches and self.caches[event.chat.id] == 4:
+            logging.info(f'Пользователь {event.from_user.username} с id {event.from_user.id} был остановлен спам фильтром')
             await event.answer(text='Не спамьте, подождите 15 секунд')
             return
         else:

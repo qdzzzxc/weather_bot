@@ -1,14 +1,12 @@
-from aiogram import F, Dispatcher, Router, MagicFilter
-from aiogram.enums import ContentType
-from aiogram.filters import Command, StateFilter
+from aiogram import F, Router, MagicFilter
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State, default_state
+from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery
 from datetime import datetime, timedelta
 
 from bot.weather_parsing import get_stat
-from db.data_access_object import DataAccessObject
 from db.models import Users
 
 from keyboards import from_menu_kb_generation, return_to_menu, kb_result, kb_result_10_d
@@ -28,7 +26,7 @@ async def help_command_response(message: Message):
 
 
 @router.message(Command('menu'))
-async def menu_command_response(message: Message, dao, last_val=None):
+async def menu_command_response(message: Message, last_val=None):
     keyboard = from_menu_kb_generation(last_val=bool(last_val))
     await message.answer(text=text_for_response['menu'], reply_markup=keyboard)
 
@@ -72,14 +70,21 @@ result_weather_10_days = "{} " \
 
 
 @router.callback_query(F.data == 'show_10_days')
-async def result_10_days(callback: CallbackQuery, state: FSMContext, last_val, dao):
+async def result_10_days(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao, mode='10_d')
     text = result_weather_10_days.format(last_val, *weather)
     await callback.message.edit_text(text=text, reply_markup=kb_result_10_d())
 
 
+@router.callback_query(F.data == 'return_to_search_result')
+async def result_10_days(callback: CallbackQuery, last_val, dao):
+    weather = await get_stat(last_val, dao)
+    text = result_weather_default.format(last_val, *weather)
+    await callback.message.edit_text(text=text, reply_markup=kb_result())
+
+
 @router.callback_query(F.data == 'weather_last_city_search')
-async def last_city_result(callback: CallbackQuery, state: FSMContext, last_val, dao):
+async def last_city_result(callback: CallbackQuery, last_val, dao):
     await callback.message.edit_text(text=f'Поиск погоды в {last_val}')
 
     weather = await get_stat(last_val, dao)
@@ -87,22 +92,22 @@ async def last_city_result(callback: CallbackQuery, state: FSMContext, last_val,
     await callback.message.edit_text(text=result_weather_default.format(last_val, *weather), reply_markup=kb_result())
 
 
-@router.message(StateFilter(BotStates.wait_for_city_name), 2 < MagicFilter.len(F.text) < 30)
+@router.message(BotStates.wait_for_city_name, 2 < MagicFilter.len(F.text) < 30)
 async def searching_process(message: Message, state: FSMContext, dao):
     resp = await message.answer(text=f'Поиск погоды в {message.text}')
     await state.clear()
 
     weather = await get_stat(message.text, dao)
     if weather:
-        await dao.upd_col_val(Users, 'user_id', message.from_user.id, 'last_city', message.text)
+        await dao.upd_col_val(Users, 'user_id', message.from_user.id, vals_to_update={'last_city': message.text})
         await resp.edit_text(text=result_weather_default.format(message.text, *weather), reply_markup=kb_result())
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 
 
-@router.message(StateFilter(BotStates.wait_for_city_name))
+@router.message(BotStates.wait_for_city_name)
 async def city_name_error(message: Message, state: FSMContext):
-    text = 'Введённое название некорректно ('
+    text = 'Введённое название некорректно, попробуйте снова'
     await message.answer(text=text)
 
 
@@ -112,12 +117,6 @@ async def callback_to_menu(callback: CallbackQuery, last_val):
     await callback.message.edit_text(
         text=text_for_response['menu'],
         reply_markup=keyboard)
-
-
-# @router.callback_query()
-# async def process_category_press(callback):
-#     await callback.message.answer(text=callback.data)
-#     await callback.answer()
 
 
 @router.message()

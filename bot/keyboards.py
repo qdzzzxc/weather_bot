@@ -31,8 +31,8 @@ def kb_result():
 
 def kb_result_10_d():
     kb_builder = InlineKeyboardBuilder()
-    button_names = ['Поиск по населённому пункту']
-    back_data = ['weather_city_search']
+    button_names = ['Краткая сводка', 'Поиск по населённому пункту']
+    back_data = ['return_to_search_result', 'weather_city_search']
     buttons = [InlineKeyboardButton(text=text, callback_data=data) for text, data in zip(button_names, back_data)]
     kb_builder.row(*buttons, width=1)
     return kb_builder.as_markup(resize_keyboard=True)

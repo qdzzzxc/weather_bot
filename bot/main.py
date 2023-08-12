@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from aiogram import Bot, Dispatcher
-from sqlalchemy import URL
+import logging
 
 from bot.middlewares.create_session import SessionMiddleware
 from bot.middlewares.registered import RegisteredMiddleware
@@ -13,8 +13,10 @@ from config import load_config, Config
 from main_menu import set_main_menu
 
 
-
 async def main():
+    logging.basicConfig(level=logging.INFO, filename="bot_log.log", filemode="w",
+                        format="%(asctime)s %(levelname)s %(message)s")
+
     configfile = os.environ.get("CONFIG", "bot.ini")
     config: Config = load_config(configfile)
     bot = Bot(token=config.tg_bot.token,
@@ -24,8 +26,6 @@ async def main():
     await set_main_menu(bot)
 
     dp.include_router(user_handlers_fsm.router)
-
-    #dp.include_router(other_handlers.router)
 
     db_session = await async_connection_db(
         engine=await create_async_engine_db(
@@ -39,6 +39,8 @@ async def main():
 
     dp.update.middleware(SessionMiddleware(sessionmaker=db_session))
     dp.update.middleware(RegisteredMiddleware())
+
+    logging.info('Запуск бота')
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

@@ -1,13 +1,8 @@
 import logging
 from typing import NoReturn
-from dataclasses import dataclass
 
-from sqlalchemy import select, update, exists
-from sqlalchemy.engine import ScalarResult
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import (
-    NoResultFound,
-)
 
 from db.models import Users, Cities, WeatherStat
 
@@ -36,10 +31,10 @@ class DataAccessObject:
     ) -> None:
         await self.session.merge(db_object)
 
-    async def upd_col_val(self, db_object: Users | Cities | WeatherStat, db_object_id_col, db_object_id: int, col_val_name, value) -> None:
+    async def upd_col_val(self, db_object: Users | Cities | WeatherStat, db_object_id_col, db_object_id: int,
+                          vals_to_update={}) -> None:
         if db_object_id:
-            #под дикт переделать можн
-            stmt = update(db_object).where(getattr(db_object, db_object_id_col) == db_object_id).values({col_val_name: value})
+            stmt = update(db_object).where(getattr(db_object, db_object_id_col) == db_object_id).values(vals_to_update)
             await self.session.execute(stmt)
 
     async def get_col_val(self, db_object: Users | Cities | WeatherStat, db_object_id_col, db_object_id: int, col_val_name) -> str:
