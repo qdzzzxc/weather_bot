@@ -1,4 +1,5 @@
-from aiogram import F, Router, MagicFilter
+from aiogram import F, Router, MagicFilter, types
+from aiogram.client import bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -9,8 +10,8 @@ from datetime import datetime, timedelta
 from bot.weather_parsing import get_stat
 from db.models import Users
 
-from keyboards import from_menu_kb_generation, return_to_menu, kb_result, kb_result_10_d
-from texts import text_for_response
+from bot.keyboards import from_menu_kb_generation, return_to_menu, kb_result, kb_result_10_d
+from bot.texts import text_for_response
 
 storage = MemoryStorage()
 router = Router()
@@ -92,21 +93,23 @@ async def last_city_result(callback: CallbackQuery, last_val, dao):
     await callback.message.edit_text(text=result_weather_default.format(last_val, *weather), reply_markup=kb_result())
 
 
-@router.message(BotStates.wait_for_city_name, 2 < MagicFilter.len(F.text) < 30)
+@router.message(BotStates.wait_for_city_name, F.text.len() < 30)
 async def searching_process(message: Message, state: FSMContext, dao):
     resp = await message.answer(text=f'Поиск погоды в {message.text}')
     await state.clear()
+    #await bot.send_chat_action()
 
-    weather = await get_stat(message.text, dao)
+    city_name = message.text.capitalize()
+    weather = await get_stat(city_name, dao)
     if weather:
-        await dao.upd_col_val(Users, 'user_id', message.from_user.id, vals_to_update={'last_city': message.text})
-        await resp.edit_text(text=result_weather_default.format(message.text, *weather), reply_markup=kb_result())
+        await dao.upd_col_val(Users, 'user_id', message.from_user.id, vals_to_update={'last_city': city_name})
+        await resp.edit_text(text=result_weather_default.format(city_name, *weather), reply_markup=kb_result())
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 
 
 @router.message(BotStates.wait_for_city_name)
-async def city_name_error(message: Message, state: FSMContext):
+async def city_name_error(message: Message):
     text = 'Введённое название некорректно, попробуйте снова'
     await message.answer(text=text)
 

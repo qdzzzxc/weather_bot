@@ -52,22 +52,27 @@ async def get_mail_weather(name):
     async with ClientSession() as session:
         url = 'https://pogoda.mail.ru/prognoz/' + f'{name}/'
         async with session.get(url=url) as response:
-            soup = bs(await response.text(), 'html.parser')
-            temp_now = soup.find('div', class_="information__content__temperature").text
-            temp_now = int(temp_now.strip()[-4:-1])
-            two_in_one = soup.find_all('div', class_='information__content__additional__item')[:3:2]
-            feels_like = int(two_in_one[0].get_text().strip()[-5:-2])
-            type_ = two_in_one[1].get_text().strip()
-            rain_perc = soup.find_all('div', class_='information__content__period__additional__item')[4].text
-            rain_perc = int(rain_perc.strip()[:-1])
-            for_10_days = soup.find_all('div', class_="day__temperature")
-            for_10_days = [int(x.get_text()[:3]) for x in for_10_days]
+            try:
+                soup = bs(await response.text(), 'html.parser')
+                temp_now = soup.find('div', class_="information__content__temperature").text
+                temp_now = int(temp_now.strip()[-4:-1])
+                two_in_one = soup.find_all('div', class_='information__content__additional__item')[:3:2]
+                feels_like = int(two_in_one[0].get_text().strip()[-5:-2])
+                type_ = two_in_one[1].get_text().strip()
+                rain_perc = soup.find_all('div', class_='information__content__period__additional__item')[4].text
+                rain_perc = int(rain_perc.strip()[:-1])
+                for_10_days = soup.find_all('div', class_="day__temperature")
+                for_10_days = [int(x.get_text()[:3]) for x in for_10_days]
 
-            return temp_now, feels_like, type_, rain_perc, for_10_days
+                return temp_now, feels_like, type_, rain_perc, for_10_days
+            except AttributeError:
+                logging.error(f'Ошибка mail погоды в {name}')
+                return
 
 
 def get_avg_with_nones(*args):
     arg = [x for x in args if x is not None]
+    if not arg: return 'Не удалось получить данные'
     return round(sum(arg)/len(arg), 1)
 
 
@@ -86,11 +91,16 @@ async def get_stat(city, dao, mode='default'):
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
         return
-    translit_name = translit(city, language_code='ru', reversed=True).replace("'", '')
+    translit_name = translit(city, language_code='ru', reversed=True).replace("'", '').replace('ja', 'ya')
     name, lat, lon = open_weather[:3]
     yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
     mail_weather = await asyncio.create_task(get_mail_weather(translit_name))
-    now_o, feels_o = open_weather[-2:]
+    type_o, now_o, feels_o = open_weather[-3:]
+    if not mail_weather:
+        if mode == 'default':
+            return type_o, now_o, feels_o, 'Нет данных'
+        if mode == '10_d':
+            return now_o, *['Нет данных'*10]
     now_y, feels_y, type_y, d_10_y = yandex_weather
     now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
     now_r = get_avg_with_nones(now_o, now_y, now_m)
@@ -113,7 +123,7 @@ async def get_stat(city, dao, mode='default'):
             city_name=city,
             now=now_r,
             feels=feels_r,
-            type_=type_y,
+            type_=(type_y or type_m),
             rain=rain_m,
             day_1=d_10_r[0],
             day_2=d_10_r[1],

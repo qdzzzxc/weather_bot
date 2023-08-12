@@ -4,13 +4,11 @@ import os
 from aiogram import Bot, Dispatcher
 import logging
 
-from bot.middlewares.create_session import SessionMiddleware
-from bot.middlewares.registered import RegisteredMiddleware
-from db.base import async_connection_db, create_async_engine_db
-from middlewares import ThrottlingMiddleware
-import user_handlers_fsm
-from config import load_config, Config
-from main_menu import set_main_menu
+from db import async_connection_db, create_async_engine_db
+from bot.middlewares import ThrottlingMiddleware, SessionMiddleware, RegisteredMiddleware
+import bot.user_handlers_fsm as user_handlers_fsm
+from bot.config import load_config, Config
+from bot.main_menu import set_main_menu
 
 
 async def main():
@@ -44,6 +42,3 @@ async def main():
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
-
-if __name__ == '__main__':
-    asyncio.run(main())
