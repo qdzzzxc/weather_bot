@@ -67,7 +67,7 @@ async def get_mail_weather(name):
                 return temp_now, feels_like, type_, rain_perc, for_10_days
             except AttributeError:
                 logging.error(f'Ошибка mail погоды в {name}')
-                return
+                return None, None, None, None, None
 
 
 def get_avg_with_nones(*args):
@@ -83,10 +83,13 @@ async def get_stat(city, dao, mode='default'):
         city, now, feels, type_, rain, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10 = await dao.get_repeat_weather_stat(
             city)
         if mode == 'default':
+            rain = 'Нет данных' if rain == -1000 else rain
             return type_, now, feels, rain
 
         if mode == '10_d':
-            return now, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10
+            days = [day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10]
+            days = ['Нет данных' if x == -1000 else x for x in days]
+            return now, *days
 
     open_weather = await asyncio.create_task(get_open_weather(city))
     if not open_weather:
@@ -96,19 +99,18 @@ async def get_stat(city, dao, mode='default'):
     yandex_weather = await asyncio.create_task(get_yandex_weather(lat, lon))
     mail_weather = await asyncio.create_task(get_mail_weather(translit_name))
     type_o, now_o, feels_o = open_weather[-3:]
-    if not mail_weather:
-        if mode == 'default':
-            return type_o, now_o, feels_o, 'Нет данных'
-        if mode == '10_d':
-            return now_o, *['Нет данных'*10]
     now_y, feels_y, type_y, d_10_y = yandex_weather
     now_m, feels_m, type_m, rain_m, d_10_m = mail_weather
+
     now_r = get_avg_with_nones(now_o, now_y, now_m)
     feels_r = get_avg_with_nones(feels_o, feels_y, feels_m)
-    if d_10_y:
+    type_r = (type_y or type_m or type_o)
+    rain_r = (rain_m or -1000)
+
+    if d_10_y and d_10_m:
         d_10_r = [round((x + y) / 2, 1) for x, y in zip(d_10_y, d_10_m)]
     else:
-        d_10_r = d_10_m
+        d_10_r = (d_10_y or d_10_m or [-1000]*10)
 
     if not hours:
         logging.info(f'Добавлен город {city}')
@@ -123,8 +125,8 @@ async def get_stat(city, dao, mode='default'):
             city_name=city,
             now=now_r,
             feels=feels_r,
-            type_=(type_y or type_m),
-            rain=rain_m,
+            type_=type_r,
+            rain=rain_r,
             day_1=d_10_r[0],
             day_2=d_10_r[1],
             day_3=d_10_r[2],
@@ -140,8 +142,8 @@ async def get_stat(city, dao, mode='default'):
         await dao.upd_col_val(Cities, 'city', city, vals_to_update={'updated': datetime.now()})
         await dao.upd_col_val(WeatherStat, 'city_name', city, vals_to_update={'now': now_r,
                                                                               'feels': feels_r,
-                                                                              'type_': (type_y or type_m),
-                                                                              'rain': rain_m,
+                                                                              'type_': type_r,
+                                                                              'rain': rain_r,
                                                                               'day_1': d_10_r[0], 'day_2': d_10_r[1],
                                                                               'day_3': d_10_r[2], 'day_4': d_10_r[3],
                                                                               'day_5': d_10_r[4],
@@ -151,7 +153,7 @@ async def get_stat(city, dao, mode='default'):
         logging.info(f'Обновлён город {city}')
 
     if mode == 'default':
-        return (type_y or type_m), now_r, feels_r, rain_m
+        return type_r, now_r, feels_r, rain_r
 
     if mode == '10_d':
         return now_r, *d_10_r

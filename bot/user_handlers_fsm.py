@@ -1,4 +1,4 @@
-from aiogram import F, Router, MagicFilter, types
+from aiogram import F, Router, MagicFilter, types, Bot
 from aiogram.client import bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -94,10 +94,10 @@ async def last_city_result(callback: CallbackQuery, last_val, dao):
 
 
 @router.message(BotStates.wait_for_city_name, F.text.len() < 30)
-async def searching_process(message: Message, state: FSMContext, dao):
+async def searching_process(message: Message, bot: Bot, state: FSMContext, dao):
     resp = await message.answer(text=f'Поиск погоды в {message.text}')
     await state.clear()
-    #await bot.send_chat_action()
+    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
     city_name = message.text.capitalize()
     weather = await get_stat(city_name, dao)

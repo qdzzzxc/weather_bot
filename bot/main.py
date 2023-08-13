@@ -15,7 +15,7 @@ async def main():
     logging.basicConfig(level=logging.INFO, filename="bot_log.log", filemode="w",
                         format="%(asctime)s %(levelname)s %(message)s")
 
-    configfile = os.environ.get("CONFIG", "bot.ini")
+    configfile = os.environ.get("CONFIG", "bot/bot.ini")
     config: Config = load_config(configfile)
     bot = Bot(token=config.tg_bot.token,
               parse_mode=config.settings.default_parse_mode,)
