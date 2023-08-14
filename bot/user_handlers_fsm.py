@@ -69,7 +69,7 @@ result_weather_10_days = "{}\n" \
 @router.callback_query(F.data == 'show_10_days')
 async def result_10_days(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao, mode='10_d')
-    if weather[1] == 'Нет данных':
+    if weather[1] == -1000:
         text = f'{last_val}\nСейчас: {weather[0]}°C\nИзвините, но мы не смогли получить прогноз погоды на 10 дней :('
     else:
         text = result_weather_10_days.format(last_val, *weather)
@@ -80,7 +80,7 @@ async def result_10_days(callback: CallbackQuery, last_val, dao):
 async def result_10_days(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao)
     text = [string.format(atr) for string, atr in zip(result_weather_default, [last_val] + list(weather)) if
-            atr != 'Нет данных']
+            atr != -1000]
     text = ''.join(text)
     await callback.message.edit_text(text=text, reply_markup=kb_result())
 
@@ -92,7 +92,7 @@ async def last_city_result(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao)
 
     text = [string.format(atr) for string, atr in zip(result_weather_default, [last_val] + list(weather)) if
-            atr != 'Нет данных']
+            atr != -1000]
     text = ''.join(text)
     await callback.message.edit_text(text=text, reply_markup=kb_result())
 
@@ -108,7 +108,7 @@ async def searching_process(message: Message, bot: Bot, state: FSMContext, dao):
     if weather:
         await dao.upd_col_val(Users, 'user_id', message.from_user.id, vals_to_update={'last_city': city_name})
         text = [string.format(atr) for string, atr in zip(result_weather_default, [city_name] + list(weather)) if
-                atr != 'Нет данных']
+                atr != -1000]
         text = ''.join(text)
         await resp.edit_text(text=text, reply_markup=kb_result())
     else:

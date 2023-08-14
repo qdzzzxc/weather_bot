@@ -86,12 +86,10 @@ async def get_stat(city, dao, mode='default'):
         city, now, feels, type_, rain, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10 = await dao.get_repeat_weather_stat(
             city)
         if mode == 'default':
-            rain = 'Нет данных' if rain == -1000 else rain
             return type_, now, feels, rain
 
         if mode == '10_d':
             days = [day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10]
-            days = ['Нет данных'] * 10 if days[0] == -1000 else days
             return now, *days
 
     open_weather = await asyncio.create_task(get_open_weather(city))
@@ -156,8 +154,7 @@ async def get_stat(city, dao, mode='default'):
         logging.info(f'Обновлён город {city}')
 
     if mode == 'default':
-        return type_r, now_r, feels_r, rain_r if rain_r != -1000 else 'Нет данных'
+        return type_r, now_r, feels_r, rain_r
 
     if mode == '10_d':
-        d_10_r = ['Нет данных'] * 10 if d_10_r[0] == -1000 else d_10_r
         return now_r, *d_10_r
