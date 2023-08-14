@@ -15,7 +15,9 @@ async def create_async_engine_db(
     config: DbConfig,
     echo: bool,
 ) -> AsyncEngine:
-    return create_async_engine(config.conn(), echo=echo)
+    url = config.conn()
+    #url = 'postgresql+asyncpg://nikita:nyaaa8008@pg_db/weather_bot'
+    return create_async_engine(url, echo=echo)
 
 
 async def async_connection_db(

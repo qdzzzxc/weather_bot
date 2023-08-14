@@ -31,7 +31,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-config.set_main_option("sqlalchemy.url", user_config.db.conn())
+config.set_main_option("sqlalchemy.url", 'postgresql+asyncpg://nikita:nyaaa8008@pg_db/weather_bot')
 
 
 def run_migrations_offline() -> None:
@@ -51,6 +51,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
     )
 

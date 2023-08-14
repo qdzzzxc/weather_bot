@@ -25,6 +25,9 @@ async def get_open_weather(city):
             temp_now = weather['main']['temp']
             feels_like = weather['main']['feels_like']
 
+            translate_weather = {'Clear': 'Ясно', 'Rain': 'Дождь', 'Snow': 'Снег', 'Clouds': 'Облачно'}
+            type_ = translate_weather.get(type_, type_)
+
             return name, lat, lon, type_, temp_now, feels_like
 
 
@@ -88,7 +91,7 @@ async def get_stat(city, dao, mode='default'):
 
         if mode == '10_d':
             days = [day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10]
-            days = ['Нет данных' if x == -1000 else x for x in days]
+            days = ['Нет данных'] * 10 if days[0] == -1000 else days
             return now, *days
 
     open_weather = await asyncio.create_task(get_open_weather(city))
@@ -153,7 +156,8 @@ async def get_stat(city, dao, mode='default'):
         logging.info(f'Обновлён город {city}')
 
     if mode == 'default':
-        return type_r, now_r, feels_r, rain_r
+        return type_r, now_r, feels_r, rain_r if rain_r != -1000 else 'Нет данных'
 
     if mode == '10_d':
+        d_10_r = ['Нет данных'] * 10 if d_10_r[0] == -1000 else d_10_r
         return now_r, *d_10_r

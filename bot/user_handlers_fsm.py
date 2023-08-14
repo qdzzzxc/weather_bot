@@ -49,14 +49,10 @@ async def enter_city_name(callback: CallbackQuery, state: FSMContext):
     await state.set_state(BotStates.wait_for_city_name)
 
 
-result_weather_default = "{}\n" \
-                         "{}\n" \
-                         "{} °C\n" \
-                         "Ощущается как {} °C\n"\
-                         "Вероятность дождя: {} %"
+result_weather_default = ["{}\n", "{}\n", "{} °C\n", "Ощущается как {} °C\n", "Вероятность дождя: {} %"]
 
 td = datetime.today()
-result_weather_10_days = "{} " \
+result_weather_10_days = "{}\n" \
                          "Сейчас: {}°C\n" \
                          "Завтра: {}°C\n" \
                          f"{(td+timedelta(days=2)).strftime('%d-%m')}  {{}}°C\n" \
@@ -73,14 +69,19 @@ result_weather_10_days = "{} " \
 @router.callback_query(F.data == 'show_10_days')
 async def result_10_days(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao, mode='10_d')
-    text = result_weather_10_days.format(last_val, *weather)
+    if weather[1] == 'Нет данных':
+        text = f'{last_val}\nСейчас: {weather[0]}°C\nИзвините, но мы не смогли получить прогноз погоды на 10 дней :('
+    else:
+        text = result_weather_10_days.format(last_val, *weather)
     await callback.message.edit_text(text=text, reply_markup=kb_result_10_d())
 
 
 @router.callback_query(F.data == 'return_to_search_result')
 async def result_10_days(callback: CallbackQuery, last_val, dao):
     weather = await get_stat(last_val, dao)
-    text = result_weather_default.format(last_val, *weather)
+    text = [string.format(atr) for string, atr in zip(result_weather_default, [last_val] + list(weather)) if
+            atr != 'Нет данных']
+    text = ''.join(text)
     await callback.message.edit_text(text=text, reply_markup=kb_result())
 
 
@@ -90,7 +91,10 @@ async def last_city_result(callback: CallbackQuery, last_val, dao):
 
     weather = await get_stat(last_val, dao)
 
-    await callback.message.edit_text(text=result_weather_default.format(last_val, *weather), reply_markup=kb_result())
+    text = [string.format(atr) for string, atr in zip(result_weather_default, [last_val] + list(weather)) if
+            atr != 'Нет данных']
+    text = ''.join(text)
+    await callback.message.edit_text(text=text, reply_markup=kb_result())
 
 
 @router.message(BotStates.wait_for_city_name, F.text.len() < 30)
@@ -103,7 +107,10 @@ async def searching_process(message: Message, bot: Bot, state: FSMContext, dao):
     weather = await get_stat(city_name, dao)
     if weather:
         await dao.upd_col_val(Users, 'user_id', message.from_user.id, vals_to_update={'last_city': city_name})
-        await resp.edit_text(text=result_weather_default.format(city_name, *weather), reply_markup=kb_result())
+        text = [string.format(atr) for string, atr in zip(result_weather_default, [city_name] + list(weather)) if
+                atr != 'Нет данных']
+        text = ''.join(text)
+        await resp.edit_text(text=text, reply_markup=kb_result())
     else:
         await resp.edit_text(text='Не найдено населённого пункта с таким названием')
 
