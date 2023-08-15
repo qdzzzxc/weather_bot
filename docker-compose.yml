@@ -1,0 +1,29 @@
+version: '3'
+services:
+  db:
+    container_name: pg_db
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: nikita
+      POSTGRES_PASSWORD: nyaaa8008
+      POSTGRES_DB: weather_bot
+    volumes:
+      - weather_db:/weather_bot/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+  bot:
+    container_name: python_code
+    build: .
+    restart: always
+    depends_on:
+      - db
+    command: ["python", "-m", "bot"]
+    networks:
+      - app-network
+networks:
+  app-network:
+volumes:
+  weather_db:

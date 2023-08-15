@@ -139,7 +139,7 @@ async def get_stat(city, dao, mode='default'):
             day_9=d_10_r[8],
             day_10=d_10_r[9]
         ))
-    else:
+    elif d_10_r[0] != -1000:
         await dao.upd_col_val(Cities, 'city', city, vals_to_update={'updated': datetime.now()})
         await dao.upd_col_val(WeatherStat, 'city_name', city, vals_to_update={'now': now_r,
                                                                               'feels': feels_r,
@@ -152,9 +152,11 @@ async def get_stat(city, dao, mode='default'):
                                                                               'day_8': d_10_r[7], 'day_9': d_10_r[8],
                                                                               'day_10': d_10_r[9]})
         logging.info(f'Обновлён город {city}')
+    else:
+        logging.info(f'Для {city} получено только openweather')
 
     if mode == 'default':
-        return type_r, now_r, feels_r, rain_r
+        return type_r.capitalize(), now_r, feels_r, rain_r
 
     if mode == '10_d':
         return now_r, *d_10_r
