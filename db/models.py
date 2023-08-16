@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import Integer, VARCHAR, Float, Time, ForeignKey, DateTime
+from sqlalchemy import Integer, VARCHAR, Float, Time, ForeignKey, DateTime, BigInteger
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 
 from .base import Base
@@ -10,8 +10,9 @@ class Users(Base):
     __tablename__ = 'users'
 
     # тг юзер айди
-    user_id = mapped_column(Integer, unique=True, nullable=False, primary_key=True)
+    user_id = mapped_column(BigInteger, unique=True, nullable=False, primary_key=True)
     last_city = mapped_column(VARCHAR(256), unique=False, nullable=True)
+    user = mapped_column(BigInteger, unique=True)
 
     def __str__(self):
         return f'<User:{self.user_id},{self.last_city}>'
